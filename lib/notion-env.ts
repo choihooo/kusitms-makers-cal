@@ -3,6 +3,7 @@ export type NotionEnv = {
   issuesDbId: string;
   sprintsDbId: string;
   releasesDbId: string;
+  meetingsDbId: string;
 };
 
 function required(name: string): string {
@@ -18,6 +19,7 @@ export function getNotionEnv(): NotionEnv {
     projectsDbId: required("NOTION_PROJECTS_DB_ID"),
     issuesDbId: required("NOTION_ISSUES_DB_ID"),
     sprintsDbId: required("NOTION_SPRINTS_DB_ID"),
-    releasesDbId: required("NOTION_RELEASES_DB_ID")
+    releasesDbId: required("NOTION_RELEASES_DB_ID"),
+    meetingsDbId: required("NOTION_MEETINGS_DB_ID")
   };
 }

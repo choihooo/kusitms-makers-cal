@@ -1,6 +1,6 @@
 import { Client } from "@notionhq/client";
 
-export type CalendarEventSource = "project" | "issue" | "sprint" | "release";
+export type CalendarEventSource = "project" | "issue" | "sprint" | "release" | "meeting";
 
 export type CalendarEvent = {
   id: string;
@@ -17,7 +17,8 @@ const SOURCE_COLORS: Record<CalendarEventSource, string> = {
   project: "#7c3aed",
   issue: "#ea580c",
   sprint: "#2563eb",
-  release: "#059669"
+  release: "#059669",
+  meeting: "#0f766e"
 };
 
 type DateValue = {
@@ -238,26 +239,51 @@ function buildProjectEvents(pages: NotionPage[]): CalendarEvent[] {
   return events;
 }
 
+function buildMeetingEvents(pages: NotionPage[]): CalendarEvent[] {
+  const events: CalendarEvent[] = [];
+  for (const page of pages) {
+    const meetingAt = getDateProperty(page, "회의 일시");
+    if (!meetingAt.start) continue;
+
+    const allDay = isDateOnly(meetingAt.start);
+
+    events.push({
+      id: `meeting-${page.id}`,
+      title: `[Meeting] ${getTitle(page, "회의명")}`,
+      start: meetingAt.start,
+      end: meetingAt.end ? (allDay ? toExclusiveEnd(meetingAt.end) : meetingAt.end) : undefined,
+      allDay,
+      source: "meeting",
+      notionUrl: page.url,
+      color: SOURCE_COLORS.meeting
+    });
+  }
+  return events;
+}
+
 export async function fetchCalendarEvents(params: {
   accessToken: string;
   projectsDbId: string;
   issuesDbId: string;
   sprintsDbId: string;
   releasesDbId: string;
+  meetingsDbId: string;
 }): Promise<CalendarEvent[]> {
   const notion = new Client({ auth: params.accessToken });
 
-  const [projectPages, issuePages, sprintPages, releasePages] = await Promise.all([
+  const [projectPages, issuePages, sprintPages, releasePages, meetingPages] = await Promise.all([
     queryAllPages(notion, params.projectsDbId),
     queryAllPages(notion, params.issuesDbId),
     queryAllPages(notion, params.sprintsDbId),
-    queryAllPages(notion, params.releasesDbId)
+    queryAllPages(notion, params.releasesDbId),
+    queryAllPages(notion, params.meetingsDbId)
   ]);
 
   return [
     ...buildProjectEvents(projectPages),
     ...buildIssueEvents(issuePages),
     ...buildSprintEvents(sprintPages),
-    ...buildReleaseEvents(releasePages)
+    ...buildReleaseEvents(releasePages),
+    ...buildMeetingEvents(meetingPages)
   ].sort((a, b) => a.start.localeCompare(b.start));
 }
