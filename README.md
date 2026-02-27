@@ -109,13 +109,20 @@ curl -X POST http://localhost:3000/api/tickets/create \
 수동으로 만든 Notion 이슈에도 `KM-<number>`를 자동 부여하려면
 `/api/cron/sync-global-ids`가 주기적으로 실행됩니다.
 
-- 스케줄: `*/5 * * * *` (5분마다, `vercel.json`)
+- 스케줄: `*/5 * * * *` (5분마다, GitHub Actions)
 - 대상 DB: `NOTION_ISSUES_DB_ID` + 선택값(`NOTION_STORIES_DB_ID`, `NOTION_EPICS_DB_ID`)
 - 동작:
   - 제목이 `[KM-123]` 형태가 아니고 Global ID가 비어 있으면 새 번호 발급
   - 제목/Global ID 중 하나에 기존 `KM-` 값이 있으면 누락된 쪽만 보정
 
-### 크론 보안
+워크플로우 파일:
+- `.github/workflows/sync-global-ids.yml`
+
+GitHub Secrets:
+- `SYNC_URL`: `https://<your-domain>/api/cron/sync-global-ids`
+- `CRON_SECRET`: 서버 환경변수 `CRON_SECRET`와 같은 값
+
+### 엔드포인트 보안
 
 `CRON_SECRET`를 설정하면 요청 헤더 `Authorization: Bearer <CRON_SECRET>`가 필요합니다.
 

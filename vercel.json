@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/sync-global-ids",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}
