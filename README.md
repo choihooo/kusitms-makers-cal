@@ -36,4 +36,3 @@ DB ID는 Notion URL에서 UUID 부분을 사용하면 됩니다.
 
 - Integration이 4개 DB에 공유되어 있어야 조회됩니다.
 - `NOTION_TOKEN`은 서버에서만 사용됩니다. `.env.local`은 커밋하지 마세요.
-- OAuth 라우트는 남겨뒀지만 현재 기본 동작에는 필요하지 않습니다.
