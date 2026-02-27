@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getNotionEnv } from "@/lib/notion-env";
 import { fetchCalendarEvents } from "@/lib/notion-events";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   const accessToken = process.env.NOTION_TOKEN ?? request.cookies.get("notion_access_token")?.value;
   if (!accessToken) {
@@ -21,10 +24,17 @@ export async function GET(request: NextRequest) {
       meetingsDbId: env.meetingsDbId
     });
 
-    return NextResponse.json({
-      events,
-      generatedAt: new Date().toISOString()
-    });
+    return NextResponse.json(
+      {
+        events,
+        generatedAt: new Date().toISOString()
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0"
+        }
+      }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ message }, { status: 500 });

@@ -11,6 +11,8 @@ type CalendarEvent = {
   start: string;
   end?: string;
   allDay: boolean;
+  source?: "project" | "issue" | "sprint" | "meeting";
+  sortOrder?: number;
   notionUrl: string;
   color: string;
 };
@@ -41,7 +43,12 @@ export default function CalendarPage() {
       }
 
       const payload = (await response.json()) as CalendarResponse;
-      setEvents(payload.events);
+      setEvents(
+        payload.events.map((event) => ({
+          ...event,
+          sortOrder: event.source ? sourcePriority[event.source] : Number.MAX_SAFE_INTEGER
+        }))
+      );
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "Failed to fetch events.");
     } finally {
@@ -52,6 +59,13 @@ export default function CalendarPage() {
   useEffect(() => {
     loadEvents();
   }, []);
+
+  const sourcePriority: Record<NonNullable<CalendarEvent["source"]>, number> = {
+    sprint: 0,
+    project: 1,
+    issue: 2,
+    meeting: 3
+  };
 
   return (
     <main className="calendar-only-page">
@@ -77,8 +91,12 @@ export default function CalendarPage() {
           buttonText={{
             today: "today"
           }}
+          dayMaxEvents={false}
+          dayMaxEventRows={false}
           height="auto"
           events={events}
+          eventOrderStrict={true}
+          eventOrder="sortOrder,title"
           eventDidMount={(info) => {
             info.el.title = info.event.title;
             info.el.setAttribute("aria-label", info.event.title);
