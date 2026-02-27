@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
   title: "KUSITMS Makers Calendar",
-  description: "Projects, Issues, Sprints, and Releases in one calendar."
+  description: "Projects, Issues, Sprints, and Meetings in one calendar."
 };
 
 type RootLayoutProps = {

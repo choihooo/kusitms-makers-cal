@@ -1,6 +1,6 @@
 import { Client } from "@notionhq/client";
 
-export type CalendarEventSource = "project" | "issue" | "sprint" | "release" | "meeting";
+export type CalendarEventSource = "project" | "issue" | "sprint" | "meeting";
 
 export type CalendarEvent = {
   id: string;
@@ -17,7 +17,6 @@ const SOURCE_COLORS: Record<CalendarEventSource, string> = {
   project: "#7c3aed",
   issue: "#ea580c",
   sprint: "#2563eb",
-  release: "#059669",
   meeting: "#0f766e"
 };
 
@@ -76,17 +75,6 @@ function resolveRangeDate(
   return { start, end };
 }
 
-function getRichText(prop: unknown): string | undefined {
-  const casted = prop as
-    | {
-        type?: string;
-        rich_text?: Array<{ plain_text?: string }>;
-      }
-    | undefined;
-  if (!casted || casted.type !== "rich_text") return undefined;
-  return casted.rich_text?.map((r) => r.plain_text ?? "").join("").trim() || undefined;
-}
-
 function getTitle(page: NotionPage, preferredKey: string): string {
   const preferred = page.properties[preferredKey] as
     | {
@@ -143,9 +131,8 @@ function buildIssueEvents(pages: NotionPage[]): CalendarEvent[] {
     const due = getDateProperty(page, "Due Date");
     if (!due.start) continue;
 
-    const issueKey = getRichText(page.properties["Issue Key"]);
     const baseTitle = getTitle(page, "Title");
-    const title = issueKey ? `[Issue] ${issueKey} ${baseTitle}` : `[Issue] ${baseTitle}`;
+    const title = `[Issue] ${baseTitle}`;
     const allDay = isDateOnly(due.start);
 
     events.push({
@@ -186,25 +173,6 @@ function buildSprintEvents(pages: NotionPage[]): CalendarEvent[] {
       source: "sprint",
       notionUrl: page.url,
       color: SOURCE_COLORS.sprint
-    });
-  }
-  return events;
-}
-
-function buildReleaseEvents(pages: NotionPage[]): CalendarEvent[] {
-  const events: CalendarEvent[] = [];
-  for (const page of pages) {
-    const releaseDate = getDateProperty(page, "Release Date").start;
-    if (!releaseDate) continue;
-
-    events.push({
-      id: `release-${page.id}`,
-      title: `[Release] ${getTitle(page, "Version")}`,
-      start: releaseDate,
-      allDay: isDateOnly(releaseDate),
-      source: "release",
-      notionUrl: page.url,
-      color: SOURCE_COLORS.release
     });
   }
   return events;
@@ -266,16 +234,14 @@ export async function fetchCalendarEvents(params: {
   projectsDbId: string;
   issuesDbId: string;
   sprintsDbId: string;
-  releasesDbId: string;
   meetingsDbId: string;
 }): Promise<CalendarEvent[]> {
   const notion = new Client({ auth: params.accessToken });
 
-  const [projectPages, issuePages, sprintPages, releasePages, meetingPages] = await Promise.all([
+  const [projectPages, issuePages, sprintPages, meetingPages] = await Promise.all([
     queryAllPages(notion, params.projectsDbId),
     queryAllPages(notion, params.issuesDbId),
     queryAllPages(notion, params.sprintsDbId),
-    queryAllPages(notion, params.releasesDbId),
     queryAllPages(notion, params.meetingsDbId)
   ]);
 
@@ -283,7 +249,6 @@ export async function fetchCalendarEvents(params: {
     ...buildProjectEvents(projectPages),
     ...buildIssueEvents(issuePages),
     ...buildSprintEvents(sprintPages),
-    ...buildReleaseEvents(releasePages),
     ...buildMeetingEvents(meetingPages)
   ].sort((a, b) => a.start.localeCompare(b.start));
 }

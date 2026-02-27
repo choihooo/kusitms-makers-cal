@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
       projectsDbId: env.projectsDbId,
       issuesDbId: env.issuesDbId,
       sprintsDbId: env.sprintsDbId,
-      releasesDbId: env.releasesDbId,
       meetingsDbId: env.meetingsDbId
     });
 
