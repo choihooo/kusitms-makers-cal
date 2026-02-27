@@ -48,6 +48,33 @@ function getDateProperty(page: NotionPage, propName: string): DateValue {
   return prop.date;
 }
 
+function resolveRangeDate(
+  page: NotionPage,
+  opts: {
+    rangePropName: string;
+    legacyStartPropName?: string;
+    legacyEndPropName?: string;
+  }
+): { start?: string; end?: string } {
+  const range = getDateProperty(page, opts.rangePropName);
+  if (range.start) {
+    return {
+      start: range.start ?? undefined,
+      end: range.end ?? undefined
+    };
+  }
+
+  const legacyStart = opts.legacyStartPropName
+    ? getDateProperty(page, opts.legacyStartPropName)
+    : {};
+  const legacyEnd = opts.legacyEndPropName ? getDateProperty(page, opts.legacyEndPropName) : {};
+
+  const start = legacyStart.start ?? legacyEnd.start ?? undefined;
+  const end = legacyEnd.end ?? legacyEnd.start ?? undefined;
+
+  return { start, end };
+}
+
 function getRichText(prop: unknown): string | undefined {
   const casted = prop as
     | {
@@ -137,8 +164,11 @@ function buildIssueEvents(pages: NotionPage[]): CalendarEvent[] {
 function buildSprintEvents(pages: NotionPage[]): CalendarEvent[] {
   const events: CalendarEvent[] = [];
   for (const page of pages) {
-    const start = getDateProperty(page, "Start Date").start;
-    const end = getDateProperty(page, "End Date").start;
+    const { start, end } = resolveRangeDate(page, {
+      rangePropName: "기간",
+      legacyStartPropName: "Start Date",
+      legacyEndPropName: "End Date"
+    });
     if (!start && !end) continue;
 
     const normalizedStart = start ?? end;
@@ -182,8 +212,11 @@ function buildReleaseEvents(pages: NotionPage[]): CalendarEvent[] {
 function buildProjectEvents(pages: NotionPage[]): CalendarEvent[] {
   const events: CalendarEvent[] = [];
   for (const page of pages) {
-    const start = getDateProperty(page, "Start Date").start;
-    const target = getDateProperty(page, "Target Date").start;
+    const { start, end: target } = resolveRangeDate(page, {
+      rangePropName: "기간",
+      legacyStartPropName: "Start Date",
+      legacyEndPropName: "Target Date"
+    });
     if (!start && !target) continue;
 
     const normalizedStart = start ?? target;
