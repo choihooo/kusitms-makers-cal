@@ -79,6 +79,10 @@ export default function CalendarPage() {
           }}
           height="auto"
           events={events}
+          eventDidMount={(info) => {
+            info.el.title = info.event.title;
+            info.el.setAttribute("aria-label", info.event.title);
+          }}
           eventClick={(info) => {
             const notionUrl = (info.event.extendedProps as { notionUrl?: string }).notionUrl;
             if (notionUrl) {
