@@ -32,8 +32,10 @@ type NotionPage = {
   properties: Record<string, unknown>;
 };
 
-function stripLeadingTypeTag(title: string): string {
-  return title.replace(/^\[(Issue|Story)\]\s*/i, "").trim();
+function ensureLeadingTypeTag(title: string, issueType: "Story" | "Issue"): string {
+  if (/^\[(Issue|Story)\]\s*/i.test(title)) return title;
+  const label = issueType === "Story" ? "Story" : "Issue";
+  return `[${label}] ${title}`;
 }
 
 function getSelectName(page: NotionPage, propName: string): string | undefined {
@@ -145,9 +147,10 @@ function buildIssueEvents(pages: NotionPage[]): CalendarEvent[] {
     if (!due.start) continue;
 
     const baseTitle = getTitle(page, "Title");
-    const title = stripLeadingTypeTag(baseTitle);
     const issueType = getSelectName(page, "Type");
-    const source: CalendarEventSource = issueType === "Story" ? "story" : "issue";
+    const normalizedType: "Story" | "Issue" = issueType === "Story" ? "Story" : "Issue";
+    const title = ensureLeadingTypeTag(baseTitle, normalizedType);
+    const source: CalendarEventSource = normalizedType === "Story" ? "story" : "issue";
     const allDay = isDateOnly(due.start);
 
     events.push({
