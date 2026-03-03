@@ -1,6 +1,6 @@
 import { Client } from "@notionhq/client";
 
-export type CalendarEventSource = "project" | "issue" | "sprint" | "meeting";
+export type CalendarEventSource = "project" | "story" | "issue" | "sprint" | "meeting";
 
 export type CalendarEvent = {
   id: string;
@@ -15,6 +15,7 @@ export type CalendarEvent = {
 
 const SOURCE_COLORS: Record<CalendarEventSource, string> = {
   project: "#7c3aed",
+  story: "#16a34a",
   issue: "#ea580c",
   sprint: "#2563eb",
   meeting: "#0f766e"
@@ -30,6 +31,18 @@ type NotionPage = {
   url: string;
   properties: Record<string, unknown>;
 };
+
+function stripLeadingTypeTag(title: string): string {
+  return title.replace(/^\[(Issue|Story)\]\s*/i, "").trim();
+}
+
+function getSelectName(page: NotionPage, propName: string): string | undefined {
+  const prop = page.properties[propName] as
+    | { type?: string; select?: { name?: string | null } | null }
+    | undefined;
+  if (!prop || prop.type !== "select" || !prop.select?.name) return undefined;
+  return prop.select.name;
+}
 
 function isDateOnly(value: string): boolean {
   return value.length === 10;
@@ -132,7 +145,9 @@ function buildIssueEvents(pages: NotionPage[]): CalendarEvent[] {
     if (!due.start) continue;
 
     const baseTitle = getTitle(page, "Title");
-    const title = `[Issue] ${baseTitle}`;
+    const title = stripLeadingTypeTag(baseTitle);
+    const issueType = getSelectName(page, "Type");
+    const source: CalendarEventSource = issueType === "Story" ? "story" : "issue";
     const allDay = isDateOnly(due.start);
 
     events.push({
@@ -141,9 +156,9 @@ function buildIssueEvents(pages: NotionPage[]): CalendarEvent[] {
       start: due.start,
       end: due.end ? (allDay ? toExclusiveEnd(due.end) : due.end) : undefined,
       allDay,
-      source: "issue",
+      source,
       notionUrl: page.url,
-      color: SOURCE_COLORS.issue
+      color: SOURCE_COLORS[source]
     });
   }
   return events;

@@ -11,7 +11,7 @@ type CalendarEvent = {
   start: string;
   end?: string;
   allDay: boolean;
-  source?: "project" | "issue" | "sprint" | "meeting";
+  source?: "project" | "story" | "issue" | "sprint" | "meeting";
   sortOrder?: number;
   notionUrl: string;
   color: string;
@@ -63,8 +63,9 @@ export default function CalendarPage() {
   const sourcePriority: Record<NonNullable<CalendarEvent["source"]>, number> = {
     sprint: 0,
     project: 1,
-    issue: 2,
-    meeting: 3
+    story: 2,
+    issue: 3,
+    meeting: 4
   };
 
   return (
